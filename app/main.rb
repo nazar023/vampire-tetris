@@ -1,4 +1,4 @@
-# $gtk.reset
+$gtk.reset
 
 class TetrisGame
   BACKGROUND = [34, 33, 44].freeze
@@ -26,12 +26,14 @@ class TetrisGame
   J_BLOCK = [
     [1, 0, 0].freeze,
     [1, 1, 1].freeze
+  ].reverse!.freeze
+  I_BLOCK = [
+    [2, 2, 2, 2].freeze
   ].freeze
-  I_BLOCK = [ [2, 2, 2, 2].freeze ].freeze
   S_BLOCK = [
     [0, 3, 3].freeze,
     [3, 3, 0].freeze
-  ].freeze
+  ].reverse!.freeze
   O_BLOCK = [
     [4, 4].freeze,
     [4, 4].freeze
@@ -39,15 +41,15 @@ class TetrisGame
   L_BLOCK = [
     [0, 0, 5].freeze,
     [5, 5, 5].freeze
-  ].freeze
+  ].reverse!.freeze
   Z_BLOCK = [
     [6, 6, 0].freeze,
     [0, 6, 6].freeze
-  ].freeze
+  ].reverse!.freeze
   T_BLOCK = [
     [0, 7, 0].freeze,
     [7, 7, 7].freeze
-  ].freeze
+  ].reverse!.freeze
 
   SHAPES = [
     J_BLOCK, I_BLOCK, S_BLOCK, O_BLOCK, L_BLOCK, Z_BLOCK, T_BLOCK
@@ -56,13 +58,51 @@ class TetrisGame
   GRID_WIDTH = 10
   GRID_HEIGHT = 20
 
-  def initialize(args, grid_x = nil, grid_y = nil, box_size: 31)
+  class Shape
+    def initialize(shape_array, col = nil, row = nil)
+      @shape_array = shape_array
+      @col = col || ((GRID_WIDTH / 2) - (width / 2)).floor
+      @row = row || GRID_HEIGHT
+    end
+
+    attr_reader :row, :col
+
+    def width
+      @shape_array[0].length
+    end
+
+    def height
+      @shape_array.length
+    end
+
+    def descend
+      @row -= 1
+    end
+
+    def each_box(col: col, row: row)
+      @shape_array.each_with_index do |shape_row, row_index|
+        shape_row.each_with_index do |color_index, col_index|
+          next if color_index == 0
+
+          yield(col + col_index, row + row_index, color_index)
+        end
+      end
+    end
+  end
+
+  # TetrisGame
+  def initialize(args, grid_x: nil, grid_y: nil, box_size: 31)
     @args = args
     @grid = Array.new(GRID_HEIGHT, Array.new(GRID_WIDTH, 0))
 
     @box_size = box_size
     @grid_x = grid_x || (1280 - @box_size * GRID_WIDTH) / 2
-    @grid_y = grid_y || (720 - @box_size * GRID_HEIGHT) / 2
+    @grid_y = grid_y || (720 - @box_size * (GRID_HEIGHT + 1)) / 2
+
+    @frames_per_move = 60
+    @current_frame = 0
+
+    spawn_shape
   end
 
   def out
@@ -84,13 +124,9 @@ class TetrisGame
     end
   end
 
-  def render_shape(shape, col, row)
-    shape.reverse_each.each_with_index do |shape_row, row_index|
-      shape_row.each_with_index do |color_index, col_index|
-        next if color_index == 0
-
-        box_in_grid(col + col_index, row + row_index, COLORS_INDEX[color_index])
-      end
+  def render_shape(shape)
+    shape.each_box do |col, row, color_index|
+      box_in_grid(col, row, COLORS_INDEX[color_index])
     end
   end
 
@@ -105,13 +141,28 @@ class TetrisGame
     out.solids << [x + padding, y + padding, padded_size, padded_size, *color]
   end
 
+  def spawn_shape
+    @current_shape = Shape.new(SHAPES.sample)
+  end
+
   def render
     background
 
-    SHAPES.each_with_index { |shape, row| render_shape(shape, 0, row * 3) }
+    render_shape(@current_shape)
+    SHAPES.each_with_index { |s, row| render_shape(Shape.new(s, 0, row * 3)) }
+  end
+
+  def iterate
+    @current_frame += 1
+    if @current_frame >= @frames_per_move
+      @current_frame = 0
+      # @current_shape.descend
+      spawn_shape
+    end
   end
 
   def tick
+    iterate
     render
   end
 end
