@@ -12,6 +12,47 @@ class TetrisGame
   CYAN = [128, 255, 234].freeze
   VIOLET = [149, 128, 255].freeze
 
+  COLORS_INDEX = [
+    BACKGROUND,
+    BLUE,
+    CYAN,
+    GREEN,
+    YELLOW,
+    PEACH,
+    PINK,
+    VIOLET
+  ].freeze
+
+  J_BLOCK = [
+    [1, 0, 0].freeze,
+    [1, 1, 1].freeze
+  ].freeze
+  I_BLOCK = [ [2, 2, 2, 2].freeze ].freeze
+  S_BLOCK = [
+    [0, 3, 3].freeze,
+    [3, 3, 0].freeze
+  ].freeze
+  O_BLOCK = [
+    [4, 4].freeze,
+    [4, 4].freeze
+  ].freeze
+  L_BLOCK = [
+    [0, 0, 5].freeze,
+    [5, 5, 5].freeze
+  ].freeze
+  Z_BLOCK = [
+    [6, 6, 0].freeze,
+    [0, 6, 6].freeze
+  ].freeze
+  T_BLOCK = [
+    [0, 7, 0].freeze,
+    [7, 7, 7].freeze
+  ].freeze
+
+  SHAPES = [
+    J_BLOCK, I_BLOCK, S_BLOCK, O_BLOCK, L_BLOCK, Z_BLOCK, T_BLOCK
+  ].freeze
+
   GRID_WIDTH = 10
   GRID_HEIGHT = 20
 
@@ -43,6 +84,16 @@ class TetrisGame
     end
   end
 
+  def render_shape(shape, col, row)
+    shape.reverse_each.each_with_index do |shape_row, row_index|
+      shape_row.each_with_index do |color_index, col_index|
+        next if color_index == 0
+
+        box_in_grid(col + col_index, row + row_index, COLORS_INDEX[color_index])
+      end
+    end
+  end
+
   def box_in_grid(col, row, color)
     x = @grid_x + col * @box_size
     y = @grid_y + row * @box_size
@@ -56,19 +107,8 @@ class TetrisGame
 
   def render
     background
-    box_in_grid(0, 0, BLUE)
-    box_in_grid(1, 0, GREEN)
-    box_in_grid(2, 0, PINK)
-    box_in_grid(3, 0, YELLOW)
-    box_in_grid(4, 0, PEACH)
-    box_in_grid(5, 0, CYAN)
-    box_in_grid(6, 0, VIOLET)
-    box_in_grid(7, 0, BLUE)
-    box_in_grid(8, 0, BLUE)
-    box_in_grid(9, 0, BLUE)
 
-    box_in_grid(9, 19, BLUE)
-    box_in_grid(0, 19, BLUE)
+    SHAPES.each_with_index { |shape, row| render_shape(shape, 0, row * 3) }
   end
 
   def tick
