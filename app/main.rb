@@ -126,13 +126,19 @@ class TetrisGame
       @grid = grid
       @col = col || ((grid.width / 2) - (width / 2)).floor
       @row = row || grid.height
+      @projection = Projection.new(self)
     end
 
-    attr_reader :row, :col
+    attr_reader :row, :col, :projection
     alias_method :bottom_row, :row
+    alias_method :left_col, :col
 
     def top_row
       bottom_row + height - 1
+    end
+
+    def right_col
+      left_col + width - 1
     end
 
     def width
@@ -143,18 +149,41 @@ class TetrisGame
       @shape_array.length
     end
 
-    def can_descend?
-      can_be_placed_on?(row: row - 1)
+    def move_left
+      return false unless can_be_placed_on?(col: col - 1)
+
+      reset_projection
+      @col -= 1
+      true
+    end
+
+    def move_right
+      return false unless can_be_placed_on?(col: col + 1)
+
+      reset_projection
+      @col += 1
+      true
+    end
+
+    def move_down
+      return false if cannot_descend?
+
+      descend
+      true
     end
 
     def can_be_placed_on?(col: col, row: row)
-      return false if col < 0 || row < 0
+      return false if col < 0 || (col + width - 1 >= @grid.width) || row < 0
 
       each_box(col: col, row: row) do |box_col, box_row, _|
         return false if @grid.cell_occupied?(box_col, box_row)
       end
 
       true
+    end
+
+    def can_descend?
+      can_be_placed_on?(row: row - 1)
     end
 
     def cannot_descend?
@@ -180,8 +209,8 @@ class TetrisGame
       @projection_bottom_row ||= find_projection_bottom_row
     end
 
-    def projection
-      @projection ||= Projection.new(self)
+    def reset_projection
+      @projection_bottom_row = nil
     end
 
     def each_box(col: col, row: row)
@@ -196,7 +225,7 @@ class TetrisGame
   end
 
   # TetrisGame
-  def initialize(args, grid_x: nil, grid_y: nil, box_size: 31)
+  def initialize(args, grid_x: nil, grid_y: nil, box_size: 31, start_frames_per_move: 42)
     @args = args
     @grid = Grid.new
 
@@ -204,8 +233,12 @@ class TetrisGame
     @grid_x = grid_x || (1280 - @box_size * @grid.width) / 2
     @grid_y = grid_y || (720 - @box_size * (@grid.height + 1)) / 2
 
-    @frames_per_move = 6
+    @frames_per_move = start_frames_per_move
     @current_frame = 0
+
+    @kb = @args.inputs.keyboard
+    @held_key_throttle_by = 0
+    @should_plant = false
 
     spawn_shape
   end
@@ -256,15 +289,41 @@ class TetrisGame
     @current_shape = Shape.new(SHAPES.sample, grid: @grid)
   end
 
-  def render
-    background
+  def throttle_held_key(by = 7)
+    @held_key_throttle_by = by
+  end
 
-    render_boxes(@grid)
-    render_boxes(@current_shape)
-    render_boxes(@current_shape.projection, solid: false)
+  def held_key_check
+    @held_key_throttle_by -= 1
+
+    @held_key_throttle_by <= 0
+  end
+
+  def handle_input
+    if @kb.key_down.left || (@kb.key_held.left && held_key_check)
+      @current_shape.move_left && postpone_game_move
+      throttle_held_key
+    end
+    if @kb.key_down.right || (@kb.key_held.right && held_key_check)
+      @current_shape.move_right && postpone_game_move
+      throttle_held_key
+    end
+    if @kb.key_down.down || (@kb.key_held.down && held_key_check)
+      @current_shape.move_down && postpone_game_move
+      throttle_held_key(2)
+    end
+  end
+
+  def postpone_game_move
+    @current_frame >= 0 && @current_frame -= (15 - 30 / @frames_per_move)
   end
 
   def iterate
+    handle_input
+    game_move
+  end
+
+  def game_move
     @current_frame += 1
     return if @current_frame < @frames_per_move
 
@@ -275,6 +334,12 @@ class TetrisGame
       return
     end
 
+    unless @should_plant
+      @should_plant = true
+      @current_frame = @frames_per_move - 6
+      return
+    end
+
     if @grid.cannot_plant_shape?(@current_shape)
       # TODO: game over!
       $gtk.reset
@@ -282,7 +347,16 @@ class TetrisGame
     end
 
     @grid.plant_shape(@current_shape)
+    @should_plant = false
     spawn_shape
+  end
+
+  def render
+    background
+
+    render_boxes(@grid)
+    render_boxes(@current_shape)
+    render_boxes(@current_shape.projection, solid: false)
   end
 
   def tick
