@@ -111,6 +111,16 @@ class TetrisGame
   end
 
   class Shape
+    class Projection
+      def initialize(shape)
+        @shape = shape
+      end
+
+      def each_box(&block)
+        @shape.each_box(row: @shape.projection_bottom_row, &block)
+      end
+    end
+
     def initialize(shape_array, col = nil, row = nil, grid:)
       @shape_array = shape_array
       @grid = grid
@@ -134,10 +144,14 @@ class TetrisGame
     end
 
     def can_descend?
-      return false if row <= 0
+      can_be_placed_on?(row: row - 1)
+    end
 
-      each_box do |col, row, _|
-        return false if @grid.cell_occupied?(col, row - 1)
+    def can_be_placed_on?(col: col, row: row)
+      return false if col < 0 || row < 0
+
+      each_box(col: col, row: row) do |box_col, box_row, _|
+        return false if @grid.cell_occupied?(box_col, box_row)
       end
 
       true
@@ -149,6 +163,25 @@ class TetrisGame
 
     def descend
       @row -= 1
+    end
+
+    def find_projection_bottom_row
+      return row if row <= 0
+
+      projection_row = row - 1
+      while can_be_placed_on?(row: projection_row) do
+        projection_row -= 1
+      end
+
+      projection_row + 1
+    end
+
+    def projection_bottom_row
+      @projection_bottom_row ||= find_projection_bottom_row
+    end
+
+    def projection
+      @projection ||= Projection.new(self)
     end
 
     def each_box(col: col, row: row)
@@ -196,21 +229,27 @@ class TetrisGame
     end
   end
 
-  def render_boxes(box_collection)
+  def render_boxes(box_collection, **opts)
     box_collection.each_box do |col, row, color_index|
-      box_in_grid(col, row, COLORS_INDEX[color_index])
+      box_in_grid(col, row, COLORS_INDEX[color_index], **opts)
     end
   end
 
-  def box_in_grid(col, row, color)
+  def box_in_grid(col, row, color, solid: true)
     x = @grid_x + col * @box_size
     y = @grid_y + row * @box_size
-    box(x, y, color)
+    solid ? box(x, y, color) : box_border(x, y, color)
   end
 
   def box(x, y, color, padding: 2)
     padded_size = @box_size - (padding * 2)
     out.solids << [x + padding, y + padding, padded_size, padded_size, *color]
+  end
+
+  def box_border(x, y, color, padding: 2)
+    padded_size = @box_size - (padding * 2)
+    out.borders << [x + padding, y + padding, padded_size, padded_size, *color]
+    out.borders << [x + padding + 1, y + padding + 1, padded_size - 2, padded_size - 2, *color]
   end
 
   def spawn_shape
@@ -220,8 +259,9 @@ class TetrisGame
   def render
     background
 
-    render_boxes(@current_shape)
     render_boxes(@grid)
+    render_boxes(@current_shape)
+    render_boxes(@current_shape.projection, solid: false)
   end
 
   def iterate
