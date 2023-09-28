@@ -17,8 +17,10 @@ module Tetris
 
       @kb = @args.inputs.keyboard
       @held_key_throttle_by = 0
+
       @should_plant = false
       @score = 0
+      @pause = false
 
       spawn_shape
       spawn_shape
@@ -89,7 +91,16 @@ module Tetris
       @held_key_throttle_by <= 0
     end
 
+    def toggle_pause
+      @pause = !@pause
+    end
+
     def handle_input
+      if @kb.key_down.escape
+        toggle_pause
+      end
+      return if @pause
+
       if @kb.key_down.up
         @current_shape.rotate && postpone_and_prevent_planting
       end
@@ -138,6 +149,8 @@ module Tetris
 
     def iterate
       handle_input
+      return if @pause
+
       game_move
     end
 
@@ -192,9 +205,10 @@ module Tetris
 
       render_boxes(@grid)
       render_boxes(@current_shape)
-      render_boxes(@current_shape.projection, solid: false)
+      render_boxes(@current_shape.projection, solid: false) unless @pause
       render_score
       render_next_shape
+      render_pause
     end
 
     def tick
@@ -209,6 +223,16 @@ module Tetris
     def render_next_shape
       @next_shape_projection ||= @next_shape.positioned_projection(col: 12, row: 19)
       render_boxes(@next_shape_projection)
+    end
+
+    def render_pause
+      return unless @pause
+
+      padding = 2
+      width = (10 * @box_size) - (padding * 2)
+      height = (20 * @box_size) - (padding * 2)
+      out.solids << [@grid_x + padding, @grid_y + padding, width, height, *BACKGROUND, 240]
+      out.labels << [*grid_cell_coordinates(1, 13), "Paused", 35, 0, WHITE]
     end
   end
 end
