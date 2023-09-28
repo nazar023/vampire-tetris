@@ -1,9 +1,8 @@
-# Remove the pound sign and leading space for the properties below before publishing your game.
 # devid=myname
-# devtitle=My Name
+devtitle=Nazar Matus
 # gameid=mygame
-# gametitle=My Game
-# version=0.1
+gametitle=Vampire Tetris
+version=0.1
 # icon=metadata/icon.png
 
 # === Flags available at all licensing tiers ===
