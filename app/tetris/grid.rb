@@ -43,6 +43,31 @@ module Tetris
       @grid_array[index]
     end
 
+    def row_filled?(index)
+      real_row(index).all?(&:positive?)
+    end
+
+    def clear_row(index)
+      deleted_row = @grid_array.delete_at(index)
+      deleted_row.fill(0)
+      @grid_array.push(deleted_row)
+    end
+
+    def clear_rows_at(idices)
+      idices.sort.reverse_each do |index|
+        clear_row(index)
+      end
+    end
+
+    def rows_to_clear_with_shape(shape)
+      rows_to_clear = []
+      shape.rows_range.each.reverse_each do |row_index|
+        rows_to_clear.push(row_index) if row_filled?(row_index)
+      end
+
+      rows_to_clear
+    end
+
     def each_box
       @grid_array.each_with_index do |grid_row, row_index|
         grid_row.each_with_index do |color_index, col_index|

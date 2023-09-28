@@ -1,6 +1,9 @@
+# $gtk.reset
+
 module Tetris
   BACKGROUND = [34, 33, 44].freeze
-  FRAME = [245, 245, 239, 30].freeze
+  FRAME = [59, 58, 67].freeze
+  WHITE = [245, 245, 239].freeze
 
   BLUE = [40, 194, 255].freeze
   GREEN = [138, 255, 128].freeze
@@ -18,7 +21,8 @@ module Tetris
     YELLOW,
     PEACH,
     PINK,
-    VIOLET
+    VIOLET,
+    WHITE
   ].freeze
 end
 

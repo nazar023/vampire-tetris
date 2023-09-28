@@ -42,6 +42,18 @@ module Tetris
       end
     end
 
+    class PositionedProjection
+      def initialize(shape, col:, row:)
+        @shape = shape
+        @col = col
+        @row = row
+      end
+
+      def each_box(&block)
+        @shape.each_box(col: @col, row: @row, &block)
+      end
+    end
+
     def self.sample(grid:)
       new(SHAPES.sample, grid: grid)
     end
@@ -74,6 +86,10 @@ module Tetris
 
     def height
       @shape_array.length
+    end
+
+    def rows_range
+      bottom_row..top_row
     end
 
     def move_left
@@ -242,6 +258,10 @@ module Tetris
 
     def reset_projection
       @projection_bottom_row = nil
+    end
+
+    def positioned_projection(col:, row:)
+      PositionedProjection.new(self, col: col, row: row)
     end
 
     def each_box(col: col, row: row)
