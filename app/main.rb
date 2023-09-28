@@ -1,4 +1,4 @@
-$gtk.reset
+# $gtk.reset
 
 require_relative "tetris"
 

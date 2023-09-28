@@ -1,3 +1,5 @@
+# $gtk.reset
+
 module Tetris
   class Game
     def initialize(args, grid_x: nil, grid_y: nil, box_size: 31, start_frames_per_move: 42)
@@ -76,24 +78,41 @@ module Tetris
 
     def handle_input
       if @kb.key_down.up
-        @current_shape.rotate && postpone_game_move
+        @current_shape.rotate && postpone_and_prevent_planting
       end
       if @kb.key_down.left || (@kb.key_held.left && held_key_check)
-        @current_shape.move_left && postpone_game_move
+        @current_shape.move_left && postpone_and_prevent_planting
         throttle_held_key
       end
       if @kb.key_down.right || (@kb.key_held.right && held_key_check)
-        @current_shape.move_right && postpone_game_move
+        @current_shape.move_right && postpone_and_prevent_planting
         throttle_held_key
       end
       if @kb.key_down.down || (@kb.key_held.down && held_key_check)
-        @current_shape.move_down && postpone_game_move
+        @current_shape.move_down && postpone_and_prevent_planting
         throttle_held_key(2)
       end
     end
 
-    def postpone_game_move
-      @current_frame >= 0 && @current_frame -= 10
+    def postpone_planting(by = 18)
+      return unless @should_plant
+
+      new_frame = @frames_per_move - by
+      @current_frame > new_frame && @current_frame = new_frame
+    end
+
+    def force_postpone_planting
+      @current_frame = @frames_per_move
+      postpone_planting
+    end
+
+    def prevent_planting
+      @should_plant = false
+    end
+
+    def postpone_and_prevent_planting
+      postpone_planting
+      prevent_planting
     end
 
     def iterate
@@ -114,7 +133,7 @@ module Tetris
 
       unless @should_plant
         @should_plant = true
-        @current_frame = @frames_per_move - 6
+        force_postpone_planting
         return
       end
 
@@ -125,7 +144,7 @@ module Tetris
       end
 
       @grid.plant_shape(@current_shape)
-      @should_plant = false
+      prevent_planting
       spawn_shape
     end
 
