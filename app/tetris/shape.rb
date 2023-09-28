@@ -241,6 +241,10 @@ module Tetris
       @row -= 1
     end
 
+    def drop
+      @row = projection_bottom_row
+    end
+
     def find_projection_bottom_row
       return row if row <= 0
 

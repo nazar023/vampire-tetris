@@ -2,6 +2,8 @@
 
 module Tetris
   class Game
+    MIN_FRAMES_PER_MOVE = 1
+
     def initialize(args, grid_x: nil, grid_y: nil, box_size: 31, start_frames_per_move: 42)
       @args = args
       @grid = Grid.new
@@ -21,6 +23,8 @@ module Tetris
       spawn_shape
       spawn_shape
     end
+
+    attr_reader :frames_per_move
 
     def out
       @args.outputs
@@ -101,17 +105,25 @@ module Tetris
         @current_shape.move_down && postpone_and_prevent_planting
         throttle_held_key(2)
       end
+      if @kb.key_down.space
+        @current_shape.drop && hasten_planting
+      end
+    end
+
+    def hasten_planting
+      @should_plant = true
+      @current_frame = frames_per_move
     end
 
     def postpone_planting(by = 10)
       return unless @should_plant
 
-      new_frame = @frames_per_move - by
+      new_frame = frames_per_move - by
       @current_frame > new_frame && @current_frame = new_frame
     end
 
     def force_postpone_planting
-      @current_frame = @frames_per_move
+      @current_frame = frames_per_move
       postpone_planting
     end
 
@@ -131,7 +143,7 @@ module Tetris
 
     def game_move
       @current_frame += 1
-      return if @current_frame < @frames_per_move
+      return if @current_frame < frames_per_move
 
       @current_frame = 0
 
@@ -152,6 +164,10 @@ module Tetris
         return
       end
 
+      plant_shape
+    end
+
+    def plant_shape
       @grid.plant_shape(@current_shape)
 
       rows_to_clear = @grid.rows_to_clear_with_shape(@current_shape)
@@ -160,6 +176,15 @@ module Tetris
 
       prevent_planting
       spawn_shape
+
+      speed_up_game(rows_to_clear.count / 2.0)
+    end
+
+    def speed_up_game(by)
+      return if @frames_per_move <= MIN_FRAMES_PER_MOVE
+
+      @frames_per_move -= by
+      @frames_per_move = MIN_FRAMES_PER_MOVE if @frames_per_move < MIN_FRAMES_PER_MOVE
     end
 
     def render
