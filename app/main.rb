@@ -127,6 +127,8 @@ class TetrisGame
       @col = col || ((grid.width / 2) - (width / 2)).floor
       @row = row || grid.height
       @projection = Projection.new(self)
+
+      @state = 0
     end
 
     attr_reader :row, :col, :projection
@@ -170,6 +172,110 @@ class TetrisGame
 
       descend
       true
+    end
+
+    # clockwise
+    def rotate
+      return false unless _rotate
+
+      reset_projection
+      @state = @state >= 3 ? 0 : @state + 1
+
+      true
+    end
+
+    def _rotate
+      prev_shape_array = @shape_array
+      @shape_array = @shape_array.transpose.reverse!
+
+      # I_BLOCK
+      if height == 4
+        if @state == 0
+          if can_be_placed_on?(col: col + 1)
+            @col += 1
+            return true
+          end
+        end
+        if @state == 2
+          if can_be_placed_on?(col: col + 2)
+            @col += 2
+            return true
+          end
+        end
+      end
+      if width == 4
+        if @state == 1
+          if can_be_placed_on?(col: col - 1)
+            @col -= 1
+            return true
+          end
+        end
+        if @state == 3
+          if can_be_placed_on?(col: col - 2)
+            @col -= 2
+            return true
+          end
+        end
+      end
+
+      return true if can_be_placed_on?
+
+      horizonal_shift = (width / 2).floor
+      vertical_shift = (height / 2).floor
+
+      shift = horizonal_shift
+      shift = vertical_shift if vertical_shift > shift
+
+      if can_be_placed_on?(col: col + shift)
+        @col += shift
+        return true
+      end
+
+      # I_BLOCK
+      if shift != 1
+        if can_be_placed_on?(col: col - 1)
+          @col -= 1
+          return true
+        end
+      end
+
+      if can_be_placed_on?(col: col - shift)
+        @col -= shift
+        return true
+      end
+
+      if can_be_placed_on?(row: row + shift)
+        @row += shift
+        return true
+      end
+
+      # I_BLOCK
+      if shift == 2
+        shift = 3
+
+        if can_be_placed_on?(col: col - shift)
+          @col -= shift
+          return true
+        end
+
+        # climbing?
+        if can_be_placed_on?(row: row + shift)
+          @row += shift
+          return true
+        end
+      end
+
+      # climbing?
+      if shift == 1
+        shift = 2
+        if can_be_placed_on?(row: row + shift)
+          @row += shift
+          return true
+        end
+      end
+
+      @shape_array = prev_shape_array
+      false
     end
 
     def can_be_placed_on?(col: col, row: row)
@@ -300,6 +406,9 @@ class TetrisGame
   end
 
   def handle_input
+    if @kb.key_down.up
+      @current_shape.rotate && postpone_game_move
+    end
     if @kb.key_down.left || (@kb.key_held.left && held_key_check)
       @current_shape.move_left && postpone_game_move
       throttle_held_key
@@ -315,7 +424,7 @@ class TetrisGame
   end
 
   def postpone_game_move
-    @current_frame >= 0 && @current_frame -= (15 - 30 / @frames_per_move)
+    @current_frame >= 0 && @current_frame -= 10
   end
 
   def iterate
