@@ -1,10 +1,14 @@
-# $gtk.reset
+$gtk.reset
 
 module Tetris
   class Game
-    MIN_FRAMES_PER_MOVE = 1
+    SPEEDS =                       [48, 42, 36, 30, 24, 18, 12,   9, 6].freeze
+    SPEED_CHANGE_SCORE_MILESTONES = [4, 16, 32, 48, 64, 80, 96, 112].freeze
 
-    def initialize(args, grid_x: nil, grid_y: nil, box_size: 31, start_frames_per_move: 42)
+    MIN_FRAMES_PER_MOVE = SPEEDS.last
+    MAX_SPEED = SPEEDS.count - 1
+
+    def initialize(args, grid_x: nil, grid_y: nil, box_size: 26, start_speed: 1)
       @args = args
       @grid = Grid.new
 
@@ -12,7 +16,8 @@ module Tetris
       @grid_x = grid_x || (1280 - @box_size * @grid.width) / 2
       @grid_y = grid_y || (720 - @box_size * (@grid.height + 1)) / 2
 
-      @frames_per_move = start_frames_per_move
+      @speed = start_speed
+      @frames_per_move = SPEEDS[@speed]
       @current_frame = 0
 
       @kb = @args.inputs.keyboard
@@ -185,19 +190,20 @@ module Tetris
 
       rows_to_clear = @grid.rows_to_clear_with_shape(@current_shape)
       @grid.clear_rows_at(rows_to_clear)
-      @score += rows_to_clear.count
+      @score += rows_to_clear.count**2
 
       prevent_planting
       spawn_shape
 
-      speed_up_game(rows_to_clear.count / 2.0)
+      speed_up_game
     end
 
-    def speed_up_game(by)
+    def speed_up_game
       return if @frames_per_move <= MIN_FRAMES_PER_MOVE
+      return if @score < SPEED_CHANGE_SCORE_MILESTONES[@speed]
 
-      @frames_per_move -= by
-      @frames_per_move = MIN_FRAMES_PER_MOVE if @frames_per_move < MIN_FRAMES_PER_MOVE
+      @speed += 1
+      @frames_per_move = SPEEDS[@speed]
     end
 
     def render
@@ -206,6 +212,7 @@ module Tetris
       render_boxes(@grid)
       render_boxes(@current_shape)
       render_boxes(@current_shape.projection, solid: false) unless @pause
+      render_speed
       render_score
       render_next_shape
       render_pause
@@ -216,8 +223,13 @@ module Tetris
       render
     end
 
+    def render_speed
+      speed_label = (@speed == MAX_SPEED ? "MAX" : @speed)
+      out.labels << [*grid_cell_coordinates(-5.5, 21), "Speed: #{speed_label}", WHITE]
+    end
+
     def render_score
-      out.labels << [*grid_cell_coordinates(-5, 20), "Score: #{@score}", WHITE]
+      out.labels << [*grid_cell_coordinates(-5.5, 19), "Score: #{@score}", WHITE]
     end
 
     def render_next_shape
@@ -232,7 +244,7 @@ module Tetris
       width = (10 * @box_size) - (padding * 2)
       height = (20 * @box_size) - (padding * 2)
       out.solids << [@grid_x + padding, @grid_y + padding, width, height, *BACKGROUND, 240]
-      out.labels << [*grid_cell_coordinates(1, 13), "Paused", 35, 0, WHITE]
+      out.labels << [*grid_cell_coordinates(1, 13), "Paused", 28, 0, WHITE]
     end
   end
 end
