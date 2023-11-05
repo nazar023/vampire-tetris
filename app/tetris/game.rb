@@ -27,6 +27,8 @@ module Tetris
       @score = 0
       @pause = false
 
+      @game_over = false
+
       spawn_shape
       spawn_shape
     end
@@ -100,11 +102,20 @@ module Tetris
       @pause = !@pause
     end
 
+    def end_game
+      @game_over = !@game_over
+    end
+
     def handle_input
-      if @kb.key_down.escape
+      if @kb.key_down.escape && !@game_over
         toggle_pause
       end
-      return if @pause
+
+      if @kb.key_down.enter && @game_over
+        end_game
+        $gtk.reset
+      end
+      return if @pause || @game_over
 
       if @kb.key_down.up
         @current_shape.rotate && postpone_and_prevent_planting
@@ -154,7 +165,7 @@ module Tetris
 
     def iterate
       handle_input
-      return if @pause
+      return if @pause || @game_over
 
       game_move
     end
@@ -177,8 +188,7 @@ module Tetris
       end
 
       if @grid.cannot_plant_shape?(@current_shape)
-        # TODO: game over!
-        $gtk.reset
+        end_game
         return
       end
 
@@ -216,6 +226,7 @@ module Tetris
       render_score
       render_next_shape
       render_pause
+      render_game_over
     end
 
     def tick
@@ -245,6 +256,18 @@ module Tetris
       height = (20 * @box_size) - (padding * 2)
       out.solids << [@grid_x + padding, @grid_y + padding, width, height, *BACKGROUND, 240]
       out.labels << [*grid_cell_coordinates(1, 13), "Paused", 28, 0, WHITE]
+    end
+
+    def render_game_over
+      return unless @game_over
+
+      padding = 2
+      width = (10 * @box_size) - (padding * 2)
+      height = (20 * @box_size) - (padding * 2)
+      out.solids << [@grid_x + padding, @grid_y + padding, width, height, *BACKGROUND, 240]
+      out.labels << [*grid_cell_coordinates(-1, 15), "Game over", 28, 0, WHITE]
+      out.labels << [*grid_cell_coordinates(0.3, 12), "Score #{@score}", 28, 0, WHITE]
+      out.labels << [*grid_cell_coordinates(-8, 9), "Press enter to reset", 28, 0, WHITE]
     end
   end
 end
