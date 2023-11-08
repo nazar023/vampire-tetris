@@ -2,8 +2,8 @@
 
 module Tetris
   class Game
-    SPEEDS =                       [48, 42, 36, 30, 24, 18, 12,   9, 6].freeze
-    SPEED_CHANGE_SCORE_MILESTONES = [4, 16, 32, 48, 64, 80, 96, 112].freeze
+    SPEEDS =                       [48, 42, 36, 30, 24,  18,  12,   9, 6].freeze
+    SPEED_CHANGE_LINES_MILESTONES = [5, 20, 40, 60, 80, 100, 120, 140].freeze
 
     MIN_FRAMES_PER_MOVE = SPEEDS.last
     MAX_SPEED = SPEEDS.count - 1
@@ -19,14 +19,14 @@ module Tetris
       @speed = start_speed
       @frames_per_move = SPEEDS[@speed]
       @current_frame = 0
+      @should_plant = false
 
       @kb = @args.inputs.keyboard
       @held_key_throttle_by = 0
 
-      @should_plant = false
+      @lines = 0
       @score = 0
       @pause = false
-
       @game_over = false
 
       spawn_shape
@@ -196,6 +196,7 @@ module Tetris
 
       rows_to_clear = @grid.rows_to_clear_with_shape(@current_shape)
       @grid.clear_rows_at(rows_to_clear)
+      @lines += rows_to_clear.count
       @score += rows_to_clear.count**2
 
       prevent_planting
@@ -206,7 +207,7 @@ module Tetris
 
     def speed_up_game
       return if @frames_per_move <= MIN_FRAMES_PER_MOVE
-      return if @score < SPEED_CHANGE_SCORE_MILESTONES[@speed]
+      return if @lines < SPEED_CHANGE_LINES_MILESTONES[@speed]
 
       @speed += 1
       @frames_per_move = SPEEDS[@speed]
@@ -238,6 +239,7 @@ module Tetris
     end
 
     def render_score
+      out.labels << [*grid_cell_coordinates(-5.5, 20), "Lines: #{@lines}", WHITE]
       out.labels << [*grid_cell_coordinates(-5.5, 19), "Score: #{@score}", WHITE]
     end
 
@@ -253,9 +255,10 @@ module Tetris
 
     def render_game_over
       render_overlay
-      out.labels << [*grid_cell_coordinates(5, 15), "Game Over", 40, 1, WHITE]
-      out.labels << [*grid_cell_coordinates(5, 10.5), "Your score: #{@score}", 10, 1, WHITE]
-      out.labels << [*grid_cell_coordinates(5, 8), "Press `Enter` to restart", 6, 1, WHITE]
+      out.labels << [*grid_cell_coordinates(5, 16), "Game Over", 40, 1, WHITE]
+      out.labels << [*grid_cell_coordinates(5, 11.5), "Your score: #{@score}", 10, 1, WHITE]
+      out.labels << [*grid_cell_coordinates(5, 9.5), "Lines cleared: #{@lines}", 10, 1, WHITE]
+      out.labels << [*grid_cell_coordinates(5, 6.75), "Press `Enter` to restart", 8, 1, WHITE]
     end
 
     def render_overlay
