@@ -86,7 +86,7 @@ module Tetris
       @next_shape_projection = nil
     end
 
-    def throttle_held_key(by = 7)
+    def throttle_held_key(by = MIN_FRAMES_PER_MOVE - 1)
       @held_key_throttle_by = by
     end
 
