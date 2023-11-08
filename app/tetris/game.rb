@@ -1,4 +1,4 @@
-$gtk.reset
+# $gtk.reset
 
 module Tetris
   class Game
@@ -131,7 +131,7 @@ module Tetris
       @current_frame = frames_per_move
     end
 
-    def postpone_planting(by = 10)
+    def postpone_planting(by = 9 + @speed)
       return unless @should_plant
 
       new_frame = frames_per_move - by
