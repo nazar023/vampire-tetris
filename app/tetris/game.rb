@@ -217,12 +217,14 @@ module Tetris
 
       render_boxes(@grid)
       render_boxes(@current_shape)
-      render_boxes(@current_shape.projection, solid: false) unless @pause
+      return render_game_over if @game_over
+
       render_speed
       render_score
       render_next_shape
-      render_pause
-      render_game_over
+      return render_pause if @pause
+
+      render_boxes(@current_shape.projection, solid: false)
     end
 
     def tick
@@ -245,26 +247,21 @@ module Tetris
     end
 
     def render_pause
-      return unless @pause
-
       render_overlay
-      out.labels << [*grid_cell_coordinates(1, 13), "Paused", 28, 0, WHITE]
+      out.labels << [*grid_cell_coordinates(5, 13), "Paused", 28, 1, WHITE]
     end
 
     def render_game_over
-      return unless @game_over
-
       render_overlay
-      out.labels << [*grid_cell_coordinates(-1, 15), "Game over", 28, 0, WHITE]
-      out.labels << [*grid_cell_coordinates(0.3, 12), "Score #{@score}", 28, 0, WHITE]
-      out.labels << [*grid_cell_coordinates(-8, 9), "Press enter to reset", 28, 0, WHITE]
+      out.labels << [*grid_cell_coordinates(5, 15), "Game Over", 40, 1, WHITE]
+      out.labels << [*grid_cell_coordinates(5, 10.5), "Your score: #{@score}", 10, 1, WHITE]
+      out.labels << [*grid_cell_coordinates(5, 8), "Press `Enter` to restart", 6, 1, WHITE]
     end
 
     def render_overlay
-      padding = 2
-      width = (10 * @box_size) - (padding * 2)
-      height = (20 * @box_size) - (padding * 2)
-      out.solids << [@grid_x + padding, @grid_y + padding, width, height, *BACKGROUND, 240]
+      width = 12 * @box_size
+      height = 25 * @box_size
+      out.solids << [@grid_x - @box_size, @grid_y - @box_size, width, height, *BACKGROUND, 240]
     end
   end
 end
