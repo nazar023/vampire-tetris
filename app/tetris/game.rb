@@ -103,15 +103,15 @@ module Tetris
     end
 
     def handle_input
-      if @kb.key_down.escape && !@game_over
-        toggle_pause
+      if @game_over
+        @kb.key_down.enter && $gtk.reset
+        return
       end
 
-      if @kb.key_down.enter && @game_over
-        @game_over = false
-        $gtk.reset
+      if @kb.key_down.escape
+        toggle_pause
       end
-      return if @pause || @game_over
+      return if @pause
 
       if @kb.key_down.up
         @current_shape.rotate && postpone_and_prevent_planting
@@ -259,8 +259,6 @@ module Tetris
       out.labels << [*grid_cell_coordinates(0.3, 12), "Score #{@score}", 28, 0, WHITE]
       out.labels << [*grid_cell_coordinates(-8, 9), "Press enter to reset", 28, 0, WHITE]
     end
-
-    private
 
     def render_overlay
       padding = 2
