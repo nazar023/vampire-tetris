@@ -1,9 +1,9 @@
-$gtk.reset
+# $gtk.reset
 
 module Tetris
   class Game
-    SPEEDS =                       [48, 42, 36, 30, 24, 18, 12,   9, 6].freeze
-    SPEED_CHANGE_SCORE_MILESTONES = [4, 16, 32, 48, 64, 80, 96, 112].freeze
+    SPEEDS =                       [48, 42, 36, 30, 24,  18,  12,   9, 6].freeze
+    SPEED_CHANGE_LINES_MILESTONES = [5, 20, 40, 60, 80, 100, 120, 140].freeze
 
     MIN_FRAMES_PER_MOVE = SPEEDS.last
     MAX_SPEED = SPEEDS.count - 1
@@ -19,13 +19,17 @@ module Tetris
       @speed = start_speed
       @frames_per_move = SPEEDS[@speed]
       @current_frame = 0
+      @should_plant = false
 
       @kb = @args.inputs.keyboard
+      @ms = @args.inputs.mouse
+
       @held_key_throttle_by = 0
 
-      @should_plant = false
+      @lines = 0
       @score = 0
       @pause = false
+      @game_over = false
 
       @game_over = false
 
@@ -88,8 +92,8 @@ module Tetris
       @next_shape_projection = nil
     end
 
-    def throttle_held_key(by = 7)
-      @held_key_throttle_by = by
+    def throttle_held_key(key_down)
+      @held_key_throttle_by = key_down ? 9 : 3
     end
 
     def held_key_check
@@ -113,24 +117,32 @@ module Tetris
       end
       return if @pause
 
-      if @kb.key_down.up
+      if @kb.key_down.up || press_mouse_button?(1000, 500, 50, 50)
         @current_shape.rotate && postpone_and_prevent_planting
       end
-      if @kb.key_down.left || (@kb.key_held.left && held_key_check)
+      if (@kb.key_down.left || press_mouse_button?(200, 100, 50, 50)) || (@kb.key_held.left && held_key_check || ((@ms.held && hold_mouse_button?(200, 100, 50, 50)) && held_key_check))
         @current_shape.move_left && postpone_and_prevent_planting
-        throttle_held_key
+        throttle_held_key(@kb.key_down.left)
       end
-      if @kb.key_down.right || (@kb.key_held.right && held_key_check)
+      if (@kb.key_down.right || press_mouse_button?(1000, 100, 50, 50)) || (@kb.key_held.right && held_key_check || ((@ms.held && hold_mouse_button?(1000, 100, 50, 50)) && held_key_check))
         @current_shape.move_right && postpone_and_prevent_planting
-        throttle_held_key
+        throttle_held_key(@kb.key_down.right)
       end
       if @kb.key_down.down || (@kb.key_held.down && held_key_check)
         @current_shape.move_down && postpone_and_prevent_planting
-        throttle_held_key(2)
+        throttle_held_key(false)
       end
-      if @kb.key_down.space
+      if @kb.key_down.space || press_mouse_button?(1015, 400, 50, 50)
         @current_shape.drop && hasten_planting
       end
+    end
+
+    def press_mouse_button?(x, y, height, width)
+      @ms.click&.point&.inside_rect?([x, y, height, width])
+    end
+
+    def hold_mouse_button?(x, y, height, width)
+      @ms.point&.inside_rect?([x, y, height, width])
     end
 
     def hasten_planting
@@ -138,7 +150,7 @@ module Tetris
       @current_frame = frames_per_move
     end
 
-    def postpone_planting(by = 10)
+    def postpone_planting(by = 9 + @speed)
       return unless @should_plant
 
       new_frame = frames_per_move - by
@@ -196,6 +208,7 @@ module Tetris
 
       rows_to_clear = @grid.rows_to_clear_with_shape(@current_shape)
       @grid.clear_rows_at(rows_to_clear)
+      @lines += rows_to_clear.count
       @score += rows_to_clear.count**2
 
       prevent_planting
@@ -206,7 +219,7 @@ module Tetris
 
     def speed_up_game
       return if @frames_per_move <= MIN_FRAMES_PER_MOVE
-      return if @score < SPEED_CHANGE_SCORE_MILESTONES[@speed]
+      return if @lines < SPEED_CHANGE_LINES_MILESTONES[@speed]
 
       @speed += 1
       @frames_per_move = SPEEDS[@speed]
@@ -217,17 +230,31 @@ module Tetris
 
       render_boxes(@grid)
       render_boxes(@current_shape)
-      render_boxes(@current_shape.projection, solid: false) unless @pause
+      return render_game_over if @game_over
+      render_hud
       render_speed
       render_score
       render_next_shape
+<<<<<<< HEAD
       render_pause
       render_game_over
+=======
+      return render_pause if @pause
+
+      render_boxes(@current_shape.projection, solid: false)
+>>>>>>> main
     end
 
     def tick
       iterate
       render
+    end
+
+    def render_hud
+      out.solids << [215, 100, 50, 50, 255, 0, 0]
+      out.solids << [1015, 100, 50, 50, 255, 0, 0]
+      out.solids << [1015, 500, 50, 50, 255, 0, 0]
+      out.solids << [1015, 400, 50, 50, 255, 0, 0]
     end
 
     def render_speed
@@ -236,6 +263,7 @@ module Tetris
     end
 
     def render_score
+      out.labels << [*grid_cell_coordinates(-5.5, 20), "Lines: #{@lines}", WHITE]
       out.labels << [*grid_cell_coordinates(-5.5, 19), "Score: #{@score}", WHITE]
     end
 
@@ -245,8 +273,11 @@ module Tetris
     end
 
     def render_pause
-      return unless @pause
+      render_overlay
+      out.labels << [*grid_cell_coordinates(5, 13), "Paused", 28, 1, WHITE]
+    end
 
+<<<<<<< HEAD
       render_overlay
       out.labels << [*grid_cell_coordinates(1, 13), "Paused", 28, 0, WHITE]
     end
@@ -265,6 +296,20 @@ module Tetris
       width = (10 * @box_size) - (padding * 2)
       height = (20 * @box_size) - (padding * 2)
       out.solids << [@grid_x + padding, @grid_y + padding, width, height, *BACKGROUND, 240]
+=======
+    def render_game_over
+      render_overlay
+      out.labels << [*grid_cell_coordinates(5, 16), "Game Over", 40, 1, WHITE]
+      out.labels << [*grid_cell_coordinates(5, 11.5), "Your score: #{@score}", 10, 1, WHITE]
+      out.labels << [*grid_cell_coordinates(5, 9.5), "Lines cleared: #{@lines}", 10, 1, WHITE]
+      out.labels << [*grid_cell_coordinates(5, 6.75), "Press `Enter` to restart", 8, 1, WHITE]
+    end
+
+    def render_overlay
+      width = 12 * @box_size
+      height = 25 * @box_size
+      out.solids << [@grid_x - @box_size, @grid_y - @box_size, width, height, *BACKGROUND, 240]
+>>>>>>> main
     end
   end
 end
