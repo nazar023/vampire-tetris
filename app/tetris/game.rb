@@ -21,6 +21,8 @@ module Tetris
       @current_frame = 0
 
       @kb = @args.inputs.keyboard
+      @ms = @args.inputs.mouse
+
       @held_key_throttle_by = 0
 
       @should_plant = false
@@ -113,14 +115,14 @@ module Tetris
       end
       return if @pause
 
-      if @kb.key_down.up
+      if @kb.key_down.up || press_mouse_button?(1000, 500, 50, 50)
         @current_shape.rotate && postpone_and_prevent_planting
       end
-      if @kb.key_down.left || (@kb.key_held.left && held_key_check)
+      if (@kb.key_down.left || press_mouse_button?(200, 100, 50, 50)) || (@kb.key_held.left && held_key_check || ((@ms.held && hold_mouse_button?(200, 100, 50, 50)) && held_key_check))
         @current_shape.move_left && postpone_and_prevent_planting
         throttle_held_key
       end
-      if @kb.key_down.right || (@kb.key_held.right && held_key_check)
+      if (@kb.key_down.right || press_mouse_button?(1000, 100, 50, 50)) || (@kb.key_held.right && held_key_check || ((@ms.held && hold_mouse_button?(1000, 100, 50, 50)) && held_key_check))
         @current_shape.move_right && postpone_and_prevent_planting
         throttle_held_key
       end
@@ -128,9 +130,17 @@ module Tetris
         @current_shape.move_down && postpone_and_prevent_planting
         throttle_held_key(2)
       end
-      if @kb.key_down.space
+      if @kb.key_down.space || press_mouse_button?(1015, 400, 50, 50)
         @current_shape.drop && hasten_planting
       end
+    end
+
+    def press_mouse_button?(x, y, height, width)
+      @ms.click&.point&.inside_rect?([x, y, height, width])
+    end
+
+    def hold_mouse_button?(x, y, height, width)
+      @ms.point&.inside_rect?([x, y, height, width])
     end
 
     def hasten_planting
@@ -218,7 +228,7 @@ module Tetris
       render_boxes(@grid)
       render_boxes(@current_shape)
       return render_game_over if @game_over
-
+      render_hud
       render_speed
       render_score
       render_next_shape
@@ -230,6 +240,13 @@ module Tetris
     def tick
       iterate
       render
+    end
+
+    def render_hud
+      out.solids << [215, 100, 50, 50, 255, 0, 0]
+      out.solids << [1015, 100, 50, 50, 255, 0, 0]
+      out.solids << [1015, 500, 50, 50, 255, 0, 0]
+      out.solids << [1015, 400, 50, 50, 255, 0, 0]
     end
 
     def render_speed
