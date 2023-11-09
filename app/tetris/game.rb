@@ -29,6 +29,8 @@ module Tetris
       @pause = false
       @game_over = false
 
+      @randomizer = Shape::TGMRandomizer.new
+
       spawn_shape
       spawn_shape
     end
@@ -84,7 +86,7 @@ module Tetris
 
     def spawn_shape
       @current_shape = @next_shape
-      @next_shape = Shape.sample(grid: @grid)
+      @next_shape = Shape.new(@randomizer.deal, grid: @grid)
       @next_shape_projection = nil
     end
 
