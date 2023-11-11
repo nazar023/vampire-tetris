@@ -115,16 +115,17 @@ module Tetris
       end
       return if @pause
 
-      if @kb.key_down.up || press_mouse_button?(1000, 500, 50, 50)
+      if @kb.key_down.up || press_mouse_button?(1015, 500, 50, 50)
         @current_shape.rotate && postpone_and_prevent_planting
       end
       if (@kb.key_down.left || press_mouse_button?(200, 100, 50, 50)) || (@kb.key_held.left && held_key_check || ((@ms.held && hold_mouse_button?(200, 100, 50, 50)) && held_key_check))
         @current_shape.move_left && postpone_and_prevent_planting
-        throttle_held_key(@kb.key_down.left)
+        @ms.held ? throttle_held_key(@ms.held) : throttle_held_key(@kb.key_down.left)
       end
-      if (@kb.key_down.right || press_mouse_button?(1000, 100, 50, 50)) || (@kb.key_held.right && held_key_check || ((@ms.held && hold_mouse_button?(1000, 100, 50, 50)) && held_key_check))
+      if (@kb.key_down.right || press_mouse_button?(1015, 100, 50, 50)) || (@kb.key_held.right && held_key_check || ((@ms.held && hold_mouse_button?(1015, 100, 50, 50)) && held_key_check))
         @current_shape.move_right && postpone_and_prevent_planting
-        throttle_held_key(@kb.key_down.right)
+        @ms.held ? throttle_held_key(@ms.held) : throttle_held_key(@kb.key_down.right)
+
       end
       if @kb.key_down.down || (@kb.key_held.down && held_key_check)
         @current_shape.move_down && postpone_and_prevent_planting
