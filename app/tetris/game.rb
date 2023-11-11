@@ -117,7 +117,7 @@ module Tetris
       end
       return if @pause
 
-      if rotate?
+      if rotate_key_down?
         @current_shape.rotate && postpone_and_prevent_planting
       end
       if move_left_key_down? || (move_left_key_held? && held_key_check)
@@ -128,7 +128,7 @@ module Tetris
         @current_shape.move_right && postpone_and_prevent_planting
         throttle_held_key(move_right_key_down?)
       end
-      if @kb.key_down.down || (@kb.key_held.down && held_key_check)
+      if @kb.key_down.down || @kb.key_held.down
         @current_shape.move_down && postpone_and_prevent_planting
         throttle_held_key(false)
       end
@@ -146,22 +146,22 @@ module Tetris
     end
 
     def move_left_key_down?
-      (@kb.key_down.left || press_mouse_button?(200, 100, 50, 50))
+      @kb.key_down.left || press_mouse_button?(200, 100, 50, 50)
     end
 
     def move_left_key_held?
-      (@kb.key_held.left && held_key_check || ((@ms.held && hold_mouse_button?(200, 100, 50, 50)) && held_key_check))
+      @kb.key_held.left || (@ms.held && hold_mouse_button?(200, 100, 50, 50))
     end
 
     def move_right_key_down?
-      (@kb.key_down.right || press_mouse_button?(1015, 100, 50, 50))
+      @kb.key_down.right || press_mouse_button?(1015, 100, 50, 50)
     end
 
     def move_right_key_held?
-      (@kb.key_held.right && held_key_check || ((@ms.held && hold_mouse_button?(1015, 100, 50, 50)) && held_key_check))
+      @kb.key_held.right || (@ms.held && hold_mouse_button?(1015, 100, 50, 50))
     end
 
-    def rotate?
+    def rotate_key_down?
       @kb.key_down.up || press_mouse_button?(1015, 500, 50, 50)
     end
 
