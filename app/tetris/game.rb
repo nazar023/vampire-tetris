@@ -8,6 +8,21 @@ module Tetris
     MIN_FRAMES_PER_MOVE = SPEEDS.last
     MAX_SPEED = SPEEDS.count - 1
 
+    LEFT_BUTTON_X = 215
+    LEFT_BUTTON_Y = 100
+    LEFT_BUTTON_HEIGHT = 50
+    LEFT_BUTTON_WIDTH = 50
+
+    RIGHT_BUTTON_X = 1015
+    RIGHT_BUTTON_Y = 100
+    RIGHT_BUTTON_HEIGHT = 50
+    RIGHT_BUTTON_WIDTH = 50
+
+    ROTATE_BUTTON_X = 1015
+    ROTATE_BUTTON_Y = 500
+    ROTATE_BUTTON_HEIGHT = 50
+    ROTATE_BUTTON_WIDTH = 50
+
     def initialize(args, grid_x: nil, grid_y: nil, box_size: 26, start_speed: 1)
       @args = args
       @grid = Grid.new
@@ -137,32 +152,32 @@ module Tetris
       end
     end
 
-    def press_mouse_button?(x, y, height, width)
+    def mouse_down?(x, y, height, width)
       @ms.click&.point&.inside_rect?([x, y, height, width])
     end
 
-    def hold_mouse_button?(x, y, height, width)
-      @ms.point&.inside_rect?([x, y, height, width])
+    def mouse_held?(x, y, height, width)
+      @ms.held && @ms.point&.inside_rect?([x, y, height, width])
     end
 
     def move_left_key_down?
-      @kb.key_down.left || press_mouse_button?(200, 100, 50, 50)
+      @kb.key_down.left || mouse_down?(LEFT_BUTTON_X, LEFT_BUTTON_Y, LEFT_BUTTON_HEIGHT, LEFT_BUTTON_WIDTH)
     end
 
     def move_left_key_held?
-      @kb.key_held.left || (@ms.held && hold_mouse_button?(200, 100, 50, 50))
+      @kb.key_held.left || mouse_held?(LEFT_BUTTON_X, LEFT_BUTTON_Y, LEFT_BUTTON_HEIGHT, LEFT_BUTTON_WIDTH)
     end
 
     def move_right_key_down?
-      @kb.key_down.right || press_mouse_button?(1015, 100, 50, 50)
+      @kb.key_down.right || mouse_down?(RIGHT_BUTTON_X, RIGHT_BUTTON_Y, RIGHT_BUTTON_HEIGHT, RIGHT_BUTTON_WIDTH)
     end
 
     def move_right_key_held?
-      @kb.key_held.right || (@ms.held && hold_mouse_button?(1015, 100, 50, 50))
+      @kb.key_held.right || mouse_held?(RIGHT_BUTTON_X, RIGHT_BUTTON_Y, RIGHT_BUTTON_HEIGHT, RIGHT_BUTTON_WIDTH)
     end
 
     def rotate_key_down?
-      @kb.key_down.up || press_mouse_button?(1015, 500, 50, 50)
+      @kb.key_down.up || mouse_down?(ROTATE_BUTTON_X, ROTATE_BUTTON_Y, ROTATE_BUTTON_HEIGHT, ROTATE_BUTTON_WIDTH)
     end
 
     def hasten_planting
@@ -266,9 +281,9 @@ module Tetris
     end
 
     def render_hud
-      out.solids << [215, 100, 50, 50, 255, 0, 0]
-      out.solids << [1015, 100, 50, 50, 255, 0, 0]
-      out.solids << [1015, 500, 50, 50, 255, 0, 0]
+      out.solids << [LEFT_BUTTON_X, LEFT_BUTTON_Y, LEFT_BUTTON_HEIGHT, LEFT_BUTTON_WIDTH, 255, 0, 0]
+      out.solids << [RIGHT_BUTTON_X, RIGHT_BUTTON_Y, RIGHT_BUTTON_HEIGHT, RIGHT_BUTTON_WIDTH, 255, 0, 0]
+      out.solids << [ROTATE_BUTTON_X, ROTATE_BUTTON_Y, ROTATE_BUTTON_HEIGHT, ROTATE_BUTTON_WIDTH, 255, 0, 0]
     end
 
     def render_speed
