@@ -117,14 +117,14 @@ module Tetris
       end
       return if @pause
 
-      if @kb.key_down.up || press_mouse_button?(1015, 500, 50, 50)
+      if rotate_up_key_down?
         @current_shape.rotate && postpone_and_prevent_planting
       end
-      if (@kb.key_down.left || press_mouse_button?(200, 100, 50, 50)) || (@kb.key_held.left && held_key_check || ((@ms.held && hold_mouse_button?(200, 100, 50, 50)) && held_key_check))
+      if move_left_key_down? || move_left_key_held?
         @current_shape.move_left && postpone_and_prevent_planting
         @ms.held ? throttle_held_key(@ms.held) : throttle_held_key(@kb.key_down.left)
       end
-      if (@kb.key_down.right || press_mouse_button?(1015, 100, 50, 50)) || (@kb.key_held.right && held_key_check || ((@ms.held && hold_mouse_button?(1015, 100, 50, 50)) && held_key_check))
+      if move_right_key_down? || move_right_key_held?
         @current_shape.move_right && postpone_and_prevent_planting
         @ms.held ? throttle_held_key(@ms.held) : throttle_held_key(@kb.key_down.right)
 
@@ -133,7 +133,7 @@ module Tetris
         @current_shape.move_down && postpone_and_prevent_planting
         throttle_held_key(false)
       end
-      if @kb.key_down.space || press_mouse_button?(1015, 400, 50, 50)
+      if @kb.key_down.space
         @current_shape.drop && hasten_planting
       end
     end
@@ -144,6 +144,26 @@ module Tetris
 
     def hold_mouse_button?(x, y, height, width)
       @ms.point&.inside_rect?([x, y, height, width])
+    end
+
+    def move_left_key_down?
+      (@kb.key_down.left || press_mouse_button?(200, 100, 50, 50))
+    end
+
+    def move_left_key_held?
+      (@kb.key_held.left && held_key_check || ((@ms.held && hold_mouse_button?(200, 100, 50, 50)) && held_key_check))
+    end
+
+    def move_right_key_down?
+      (@kb.key_down.right || press_mouse_button?(1015, 100, 50, 50))
+    end
+
+    def move_right_key_held?
+      (@kb.key_held.right && held_key_check || ((@ms.held && hold_mouse_button?(1015, 100, 50, 50)) && held_key_check))
+    end
+
+    def rotate_up_key_down?
+      @kb.key_down.up || press_mouse_button?(1015, 500, 50, 50)
     end
 
     def hasten_planting
@@ -250,7 +270,6 @@ module Tetris
       out.solids << [215, 100, 50, 50, 255, 0, 0]
       out.solids << [1015, 100, 50, 50, 255, 0, 0]
       out.solids << [1015, 500, 50, 50, 255, 0, 0]
-      out.solids << [1015, 400, 50, 50, 255, 0, 0]
     end
 
     def render_speed
