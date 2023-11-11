@@ -68,6 +68,14 @@ module Tetris
       @state = 0
     end
 
+    def i_block?
+      @shape_array == I_BLOCK
+    end
+
+    def o_block?
+      @shape_array == O_BLOCK
+    end
+
     attr_reader :row, :col, :projection
     alias_method :bottom_row, :row
     alias_method :left_col, :col

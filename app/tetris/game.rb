@@ -50,6 +50,15 @@ module Tetris
         box_in_grid(col, @grid.height, FRAME)
       end
 
+      (@grid.width..15).each do |col|
+        box_in_grid(col, @grid.height, FRAME)
+        box_in_grid(col, @grid.height-5, FRAME)
+      end
+
+      (16...20).each do |row|
+        box_in_grid(@grid.width+5, row, FRAME)
+      end
+
       (0...@grid.height).each do |row|
         box_in_grid(-1, row, FRAME)
         box_in_grid(@grid.width, row, FRAME)
@@ -262,7 +271,13 @@ module Tetris
     end
 
     def render_next_shape
-      @next_shape_projection ||= @next_shape.positioned_projection(col: 12, row: 19)
+      x = 11.5
+      y = 17
+      @next_shape.i_block? && x -= 0.5 and y += 0.5
+      @next_shape.o_block? && x += 0.5
+
+      @next_shape_projection ||= @next_shape.positioned_projection(col: x, row: y)
+
       render_boxes(@next_shape_projection)
     end
 
@@ -280,7 +295,7 @@ module Tetris
     end
 
     def render_overlay
-      width = 12 * @box_size
+      width = 17 * @box_size
       height = 25 * @box_size
       out.solids << [@grid_x - @box_size, @grid_y - @box_size, width, height, *BACKGROUND, 240]
     end
