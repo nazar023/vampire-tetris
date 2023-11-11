@@ -32,6 +32,36 @@ module Tetris
       J_BLOCK, I_BLOCK, S_BLOCK, O_BLOCK, L_BLOCK, Z_BLOCK, T_BLOCK
     ].freeze
 
+    S_INDEX = SHAPES.index(S_BLOCK)
+    Z_INDEX = SHAPES.index(Z_BLOCK)
+
+    # https://tetris.fandom.com/wiki/TGM_randomizer
+    class TGMRandomizer
+      def initialize(shapes = SHAPES, initial_history = [Z_INDEX, Z_INDEX, S_INDEX, S_INDEX])
+        @shapes = shapes
+        @count = shapes.count
+        @history = initial_history
+      end
+
+      def deal
+        @history.unshift(generate_index)
+        @history.pop
+
+        @shapes[@history.first]
+      end
+
+      def generate_index
+        index = rand(@count)
+        5.times do
+          return index if !@history.include?(index)
+
+          index = rand(@count)
+        end
+
+        index
+      end
+    end
+
     class Projection
       def initialize(shape)
         @shape = shape
@@ -52,10 +82,6 @@ module Tetris
       def each_box(&block)
         @shape.each_box(col: @col, row: @row, &block)
       end
-    end
-
-    def self.sample(grid:)
-      new(SHAPES.sample, grid: grid)
     end
 
     def initialize(shape_array, col = nil, row = nil, grid:)
