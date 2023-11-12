@@ -266,7 +266,7 @@ module Tetris
       render_boxes(@grid)
       render_boxes(@current_shape)
       return render_game_over if @game_over
-      render_hud
+      render_controll_buttons
       render_speed
       render_score
       render_next_shape
@@ -280,7 +280,7 @@ module Tetris
       render
     end
 
-    def render_hud
+    def render_controll_buttons
       out.solids << [LEFT_BUTTON_X, LEFT_BUTTON_Y, LEFT_BUTTON_HEIGHT, LEFT_BUTTON_WIDTH, 255, 0, 0]
       out.solids << [RIGHT_BUTTON_X, RIGHT_BUTTON_Y, RIGHT_BUTTON_HEIGHT, RIGHT_BUTTON_WIDTH, 255, 0, 0]
       out.solids << [ROTATE_BUTTON_X, ROTATE_BUTTON_Y, ROTATE_BUTTON_HEIGHT, ROTATE_BUTTON_WIDTH, 255, 0, 0]
